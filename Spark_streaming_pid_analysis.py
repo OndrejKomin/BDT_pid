@@ -1,6 +1,19 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC ### Spark Streaming Databricks exercise
+# MAGIC ### BDT Spark Streaming - HW02
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Assignment
+# MAGIC 
+# MAGIC From the data stream, implement a stream processing application that will monitor the delay
+# MAGIC of traffic -> where delays are fastest decreasing. Detect the locations where the most traffic 
+# MAGIC "spikes" occur repeatedly.
+# MAGIC 
+# MAGIC Input: Stream
+# MAGIC Output: GPS coordinates of the "fastest delay minimization" locations, dashboard map 
+# MAGIC showing these locations
 
 # COMMAND ----------
 

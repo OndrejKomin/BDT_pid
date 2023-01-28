@@ -84,7 +84,49 @@ select_base_trains = df_trains.select(from_json(col("value").cast("string"),sche
 #for saving into table we can add command .toTable("nameofthetable") , table will be stored in Data>hive_metastore>default>nameofthetable, this may prove usefull for some of you maybe
 select_stream = select_base_trains.writeStream \
         .format("memory")\
-        .queryName("mem2")\
+        .queryName("mem_trains")\
+        .outputMode("append")\
+        .start()
+
+# COMMAND ----------
+
+# %fs ls
+
+# COMMAND ----------
+
+# %fs rm -r dbfs:/checkpoints
+
+# COMMAND ----------
+
+# %sql 
+# drop table if exists trams;
+# drop table if exists buses;
+# drop table if exists regbuses;
+# drop table if exists boats;
+# drop table if exists trains;
+
+# COMMAND ----------
+
+df_boats = spark.readStream \
+  .format("kafka")\
+  .option("kafka.bootstrap.servers", "b-2-public.bdffelkafka.3jtrac.c19.kafka.us-east-1.amazonaws.com:9196, b-1-public.bdffelkafka.3jtrac.c19.kafka.us-east-1.amazonaws.com:9196") \
+  .option("kafka.sasl.mechanism", "SCRAM-SHA-512")\
+  .option("kafka.security.protocol", "SASL_SSL") \
+  .option("kafka.sasl.jaas.config", JAAS) \
+  .option("subscribe", "boats") \
+  .load()
+
+#get schema for the stream from the function in helper notebook
+schema_pid=get_pid_schema() 
+
+select_base_boats = df_boats.select(from_json(col("value").cast("string"),schema_pid).alias("data")).select("data.*") \
+#lets start reading from the stream stream over casted to memory, be advised, you can ran out of it
+#with option .outputMode("append") we are saving only the new data coming to the stream
+#with option checkpoint, so the stream knows not to overwrite someother stream, in case we stream the same topics into two streams
+#for saving into table we can add command .toTable("nameofthetable") , table will be stored in Data>hive_metastore>default>nameofthetable, this may prove usefull for some of you maybe
+select_stream = select_base_boats.writeStream \
+        .format("memory")\
+        .queryName("mem_boats")\
         .outputMode("append")\
         .start()
 
@@ -116,6 +158,37 @@ select_stream = select_base_buses.writeStream \
 
 # COMMAND ----------
 
+df_regbuses = spark.readStream \
+  .format("kafka")\
+  .option("kafka.bootstrap.servers", "b-2-public.bdffelkafka.3jtrac.c19.kafka.us-east-1.amazonaws.com:9196, b-1-public.bdffelkafka.3jtrac.c19.kafka.us-east-1.amazonaws.com:9196") \
+  .option("kafka.sasl.mechanism", "SCRAM-SHA-512")\
+  .option("kafka.security.protocol", "SASL_SSL") \
+  .option("kafka.sasl.jaas.config", JAAS) \
+  .option("subscribe", "buses") \
+  .load()
+
+#get schema for the stream from the function in helper notebook
+schema_pid=get_pid_schema() 
+
+select_base_regbuses = df_regbuses.select(from_json(col("value").cast("string"),schema_pid).alias("data")).select("data.*") \
+#lets start reading from the stream stream over casted to memory, be advised, you can ran out of it
+#with option .outputMode("append") we are saving only the new data coming to the stream
+#with option checkpoint, so the stream knows not to overwrite someother stream, in case we stream the same topics into two streams
+#for saving into table we can add command .toTable("nameofthetable") , table will be stored in Data>hive_metastore>default>nameofthetable, this may prove usefull for some of you maybe
+select_stream = select_base_regbuses.writeStream \
+        .format("memory")\
+        .queryName("mem_reg_buses")\
+        .outputMode("append")\
+        .start()
+
+# COMMAND ----------
+
+import datetime
+stream_start_timestamp = int((datetime.datetime.now() - datetime.timedelta(minutes=80)).timestamp()).__str__()
+print(stream_start_timestamp)
+
+# COMMAND ----------
+
 # name of the topic we want to suscribe too is in last option
 # by adding option   .option("startingOffsets", "earliest") we can read from the beggining of the stream, try it, but probably memory won't be able to handle it
 df_trams = spark.readStream \
@@ -125,7 +198,9 @@ df_trams = spark.readStream \
   .option("kafka.security.protocol", "SASL_SSL") \
   .option("kafka.sasl.jaas.config", JAAS) \
   .option("subscribe", "trams") \
+  .option("startingOffsets", "earliest") \
   .load()
+#.option("startingTimestamp", stream_start_timestamp) \
 
 #get schema for the stream from the function in helper notebook
 schema_pid=get_pid_schema() 
@@ -137,7 +212,7 @@ select_base_trams = df_trams.select(from_json(col("value").cast("string"),schema
 #for saving into table we can add command .toTable("nameofthetable") , table will be stored in Data>hive_metastore>default>nameofthetable, this may prove usefull for some of you maybe
 select_stream = select_base_trams.writeStream \
         .format("memory")\
-        .queryName("mem")\
+        .queryName("mem_trams")\
         .outputMode("append")\
         .start()
 
@@ -153,7 +228,7 @@ select_stream = select_base_trams.writeStream \
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC create table trams select * from mem
+# MAGIC create table trams select * from mem_trams
 
 # COMMAND ----------
 
@@ -161,6 +236,11 @@ select_stream = select_base_trams.writeStream \
 # MAGIC Lets take a look on some of the the characteristics, we won't go in details much, since from the names of variables we can easily deduct, what they are. However eventhough some variables look like integers, they may be coded as strings for consistency over different type of vehicles.
 # MAGIC 
 # MAGIC After running next cell, you can click on the pointers to show more of the structure.
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select count(*) from trams
 
 # COMMAND ----------
 

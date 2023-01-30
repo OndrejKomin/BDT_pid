@@ -3,11 +3,20 @@
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC 
+# MAGIC I read all the topics just in case I would need them all. I save data to tables with appropriate topic name. This notebook is run periodically to collect data once in a while.
+
+# COMMAND ----------
+
 from pyspark.sql.types import *
 from pyspark.sql.functions import from_json, col
 
 # connect to broker
 JAAS = 'org.apache.kafka.common.security.scram.ScramLoginModule required username="fel.student" password="FelBigDataWinter2022bflmpsvz";'
+
+#get schema for the stream from the function in helper notebook
+schema_pid=get_pid_schema() 
 
 # COMMAND ----------
 
@@ -20,14 +29,9 @@ df_trains = spark.readStream \
   .option("subscribe", "trains") \
   .load()
 
-#get schema for the stream from the function in helper notebook
-schema_pid=get_pid_schema() 
-
 select_base_trains = df_trains.select(from_json(col("value").cast("string"),schema_pid).alias("data")).select("data.*") \
-#lets start reading from the stream stream over casted to memory, be advised, you can ran out of it
-#with option .outputMode("append") we are saving only the new data coming to the stream
-#with option checkpoint, so the stream knows not to overwrite someother stream, in case we stream the same topics into two streams
-#for saving into table we can add command .toTable("nameofthetable") , table will be stored in Data>hive_metastore>default>nameofthetable, this may prove usefull for some of you maybe
+
+# append data to trains table and save checkpoint
 select_stream = select_base_trains.writeStream \
         .trigger(once=True) \
         .format("parquet") \
@@ -47,14 +51,9 @@ df_buses = spark.readStream \
   .option("subscribe", "buses") \
   .load()
 
-#get schema for the stream from the function in helper notebook
-schema_pid=get_pid_schema() 
 
 select_base_buses = df_buses.select(from_json(col("value").cast("string"),schema_pid).alias("data")).select("data.*") \
-#lets start reading from the stream stream over casted to memory, be advised, you can ran out of it
-#with option .outputMode("append") we are saving only the new data coming to the stream
-#with option checkpoint, so the stream knows not to overwrite someother stream, in case we stream the same topics into two streams
-#for saving into table we can add command .toTable("nameofthetable") , table will be stored in Data>hive_metastore>default>nameofthetable, this may prove usefull for some of you maybe
+
 select_stream = select_base_buses.writeStream \
         .trigger(once=True) \
         .format("parquet") \
@@ -73,16 +72,9 @@ df_trams = spark.readStream \
   .option("kafka.sasl.jaas.config", JAAS) \
   .option("subscribe", "trams") \
   .load()
-#.option("startingTimestamp", stream_start_timestamp) \
-
-#get schema for the stream from the function in helper notebook
-schema_pid=get_pid_schema() 
 
 select_base_trams = df_trams.select(from_json(col("value").cast("string"),schema_pid).alias("data")).select("data.*") \
-#lets start reading from the stream stream over casted to memory, be advised, you can ran out of it
-#with option .outputMode("append") we are saving only the new data coming to the stream
-#with option checkpoint, so the stream knows not to overwrite someother stream, in case we stream the same topics into two streams
-#for saving into table we can add command .toTable("nameofthetable") , table will be stored in Data>hive_metastore>default>nameofthetable, this may prove usefull for some of you maybe
+
 select_stream = select_base_trams.writeStream \
         .trigger(once=True) \
         .format("parquet") \
@@ -102,14 +94,8 @@ df_regbuses = spark.readStream \
   .option("subscribe", "regbuses") \
   .load()
 
-#get schema for the stream from the function in helper notebook
-schema_pid=get_pid_schema() 
-
 select_base_regbuses = df_regbuses.select(from_json(col("value").cast("string"),schema_pid).alias("data")).select("data.*") \
-#lets start reading from the stream stream over casted to memory, be advised, you can ran out of it
-#with option .outputMode("append") we are saving only the new data coming to the stream
-#with option checkpoint, so the stream knows not to overwrite someother stream, in case we stream the same topics into two streams
-#for saving into table we can add command .toTable("nameofthetable") , table will be stored in Data>hive_metastore>default>nameofthetable, this may prove usefull for some of you maybe
+
 select_stream = select_base_regbuses.writeStream \
         .trigger(once=True) \
         .format("parquet") \
@@ -129,14 +115,8 @@ df_boats = spark.readStream \
   .option("subscribe", "boats") \
   .load()
 
-#get schema for the stream from the function in helper notebook
-schema_pid=get_pid_schema() 
-
 select_base_boats = df_boats.select(from_json(col("value").cast("string"),schema_pid).alias("data")).select("data.*") \
-#lets start reading from the stream stream over casted to memory, be advised, you can ran out of it
-#with option .outputMode("append") we are saving only the new data coming to the stream
-#with option checkpoint, so the stream knows not to overwrite someother stream, in case we stream the same topics into two streams
-#for saving into table we can add command .toTable("nameofthetable") , table will be stored in Data>hive_metastore>default>nameofthetable, this may prove usefull for some of you maybe
+
 select_stream = select_base_boats.writeStream \
         .trigger(once=True) \
         .format("parquet") \

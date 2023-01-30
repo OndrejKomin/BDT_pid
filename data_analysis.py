@@ -17,10 +17,15 @@
 
 # COMMAND ----------
 
+# MAGIC %pip install osmnx
+# MAGIC %pip install numpy==1.23.0
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC #### Data selection
 # MAGIC 
-# MAGIC I chose to process only data from trams stram, but pretty much the same approach could be applied on other vehicle types. Either separately, or tables could be merged and processed all together.
+# MAGIC I chose to process only data from trams stream, but pretty much the same approach could be applied on other vehicle types. Either separately, or tables could be merged and processed all together.
 
 # COMMAND ----------
 
@@ -57,7 +62,7 @@
 # MAGIC   trams_delays T1, trams_delays T2
 # MAGIC   WHERE (T1.trip_msg_order + 1) = T2.trip_msg_order and T1.trip_id = T2.trip_id
 # MAGIC   ORDER BY delay_delta ASC)
-# MAGIC WHERE delay_delta < -10       -- i.e. select locations where delay decreased and set arbitrary threshold (at least 10s improvement in delay)
+# MAGIC WHERE delay_delta < -100       -- i.e. select locations where delay decreased and set arbitrary threshold (at least 100s improvement in delay)
 # MAGIC GROUP BY x, y
 # MAGIC ORDER BY count DESC
 # MAGIC LIMIT 3;
@@ -76,11 +81,6 @@ import osmnx as ox
 
 custom_filter='["highway"~"motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|road|road_link"]'
 G = ox.graph_from_place("Praha, Czechia", custom_filter=custom_filter)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Locations of the most frequent delay minimization are plotted on the map. Here, two points are very close to each other, and they overlap. But overall, all three points are on the map.
 
 # COMMAND ----------
 

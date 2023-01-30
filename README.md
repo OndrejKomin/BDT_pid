@@ -1,4 +1,4 @@
-# README
+# BDT homework
 
 This repository contains following files:
 + **data_analysis.py** - main file on databricks where I analysed collected data

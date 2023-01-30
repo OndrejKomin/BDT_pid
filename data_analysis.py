@@ -17,8 +17,29 @@
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC 
+# MAGIC #### My comment on assignment
+# MAGIC 
+# MAGIC I found that some of the requirements from assinment were somehow conflicting and vague. Specifically *"where delays are fastest decreasing"* and *"locations where the most traffic 'spikes' occur repeatedly"*.
+# MAGIC 
+# MAGIC I solved it in the following way.
+# MAGIC 
+# MAGIC ###### Fastest decresing criterium
+# MAGIC I defined this as 5 percent of the biggest delay decrements.
+# MAGIC 
+# MAGIC ###### Most traffic spikes occuring repeatedly
+# MAGIC I selected top 25 locations with biggest number of samples that fulfill the 'Fastest decreasing' criterium
+
+# COMMAND ----------
+
 # MAGIC %pip install osmnx
 # MAGIC %pip install numpy==1.23.0
+
+# COMMAND ----------
+
+import osmnx as ox
+import matplotlib.pyplot as plt
 
 # COMMAND ----------
 
@@ -49,6 +70,22 @@
 
 # COMMAND ----------
 
+df_delays = spark.sql("SELECT * FROM trams_delays").toPandas()
+
+# select threshold for what "fastest delay minimization" means
+# plot negative delays without lowest values, which could be outliers and decide on threshold
+
+df_negative_delays = df_delays[(df_delays['delay'] < 0)]['delay']
+# select top 99% to filter out outliers, so the distribution can be clearly plotted
+df_cleaned_delays = df_negative_delays[df_negative_delays > df_negative_delays.quantile(q=0.01)]
+df_cleaned_delays.plot.hist(bins=100)
+
+# fastest in my context means 5% of fastest delay reductions
+biggest_delays_threshold = df_cleaned_delays.quantile(q=0.05)
+biggest_delays_threshold
+
+# COMMAND ----------
+
 # MAGIC %sql
 # MAGIC SELECT
 # MAGIC   count(*) as count,
@@ -62,10 +99,9 @@
 # MAGIC   trams_delays T1, trams_delays T2
 # MAGIC   WHERE (T1.trip_msg_order + 1) = T2.trip_msg_order and T1.trip_id = T2.trip_id
 # MAGIC   ORDER BY delay_delta ASC)
-# MAGIC WHERE delay_delta < -100       -- i.e. select locations where delay decreased and set arbitrary threshold (at least 100s improvement in delay)
+# MAGIC WHERE delay_delta < -62     -- set threshold as stored in biggest_delays_threshold python var
 # MAGIC GROUP BY x, y
-# MAGIC ORDER BY count DESC
-# MAGIC LIMIT 3;
+# MAGIC ORDER BY count DESC;
 # MAGIC 
 # MAGIC -- In this query delay improvement between each recorded point of each trip is calculated. 
 # MAGIC -- Then only top three places where delay decreased most often are selected
@@ -74,10 +110,9 @@
 
 # save results to pandas dataframe
 df_results = _sqldf.toPandas()
+df_results = df_results.iloc[:25]
 
 # COMMAND ----------
-
-import osmnx as ox
 
 custom_filter='["highway"~"motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|road|road_link"]'
 G = ox.graph_from_place("Praha, Czechia", custom_filter=custom_filter)
@@ -85,8 +120,6 @@ G = ox.graph_from_place("Praha, Czechia", custom_filter=custom_filter)
 # COMMAND ----------
 
 # plot results on map
-
-import matplotlib.pyplot as plt
 fig, ax = ox.plot_graph(G, show=False, close=False, node_size=0)
 x = df_results['x']
 y = df_results['y']

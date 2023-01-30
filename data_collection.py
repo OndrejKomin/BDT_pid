@@ -99,7 +99,7 @@ df_regbuses = spark.readStream \
   .option("kafka.sasl.mechanism", "SCRAM-SHA-512")\
   .option("kafka.security.protocol", "SASL_SSL") \
   .option("kafka.sasl.jaas.config", JAAS) \
-  .option("subscribe", "buses") \
+  .option("subscribe", "regbuses") \
   .load()
 
 #get schema for the stream from the function in helper notebook

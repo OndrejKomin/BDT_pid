@@ -101,7 +101,8 @@ biggest_delays_threshold
 # MAGIC   ORDER BY delay_delta ASC)
 # MAGIC WHERE delay_delta < -62     -- set threshold as stored in biggest_delays_threshold python var
 # MAGIC GROUP BY x, y
-# MAGIC ORDER BY count DESC;
+# MAGIC ORDER BY count DESC
+# MAGIC LIMIT 25;
 # MAGIC 
 # MAGIC -- In this query delay improvement between each recorded point of each trip is calculated. 
 # MAGIC -- Then only top three places where delay decreased most often are selected
@@ -110,7 +111,6 @@ biggest_delays_threshold
 
 # save results to pandas dataframe
 df_results = _sqldf.toPandas()
-df_results = df_results.iloc[:25]
 
 # COMMAND ----------
 
